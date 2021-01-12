@@ -85,7 +85,7 @@ mp.setUser(null)
 
 To update user-specific properties:
 
-``ts
+```ts
 mp.setUserProps({ ... })
 ```
 
