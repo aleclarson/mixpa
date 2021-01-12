@@ -1,0 +1,29 @@
+{
+  "name": "mixpa",
+  "version": "0.1.0",
+  "description": "Mixpanel client for app events",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p .",
+    "prepare": "yarn build"
+  },
+  "files": [
+    "dist",
+    "index.ts"
+  ],
+  "keywords": [
+    "mixpanel",
+    "tiny",
+    "lite",
+    "typescript",
+    "analytics"
+  ],
+  "author": "Alec Larson",
+  "license": "MIT",
+  "repository": "aleclarson/mixpa",
+  "devDependencies": {
+    "prettier": "^2.0.0",
+    "typescript": "^4.0.0"
+  }
+}
