@@ -27,13 +27,13 @@ export const mp = create({
 
 ### Options
 
-- `token: string` 
+- `token: string`  
   Your project token.
 
-- `debug?: boolean` 
+- `debug?: boolean`  
   Enable verbose responses to debug invalid requests.
 
-- `shouldSend?: Function` 
+- `shouldSend?: Function`  
   Control when requests are sent. Useful when the network is down.
 
 ### Event Types
