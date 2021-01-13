@@ -49,8 +49,8 @@ export function create<AppEvents extends object>({
         enqueue('setUser', {
           event: '$identify',
           properties: {
-            $identified_id: userId,
-            $anon_id: state.$device_id,
+            $identified_id: state.$device_id,
+            $anon_id: userId,
             token,
           },
         })
