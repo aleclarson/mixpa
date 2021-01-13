@@ -10,7 +10,7 @@ export interface Client<AppEvents extends object = any> {
   /** Identify the current user */
   setUser(userId: string | null): void
   /** Set properties for the current user */
-  setUserProps(props: AnyProps): Promise<void>
+  setUserProps(props: UserProps): Promise<void>
 }
 
 export function create<AppEvents extends object>({
@@ -122,6 +122,29 @@ interface SuperProps extends AnyProps {
   $model?: string
   /** Device UUID generated and persisted by you */
   $device_id?: string
+}
+
+/** https://help.mixpanel.com/hc/en-us/articles/115004708186-Profile-Properties */
+interface UserProps extends AnyProps {
+  $name?: string
+  $first_name?: string
+  $last_name?: string
+  $referring_domain?: string
+  /** The url of a gif, jpg, jpeg, or png for the profile picture. */
+  $avatar?: string
+  /**
+   * The user's email address.
+   * You must set this property if you want to send users email from Mixpanel.
+   */
+  $email?: string
+  /**
+   * The user's phone number.
+   * You must set this property if you want to send users SMS from Mixpanel.
+   * Note that a '+' needs to precede phone numbers.
+   */
+  $phone?: string
+  /** Reserved for internal use by Mixpanel */
+  bucket?: never
 }
 
 const pathsByMethod: Record<string, string> = {
