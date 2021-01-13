@@ -43,7 +43,7 @@ export function create<AppEvents extends object>({
       Object.assign(state, newState)
     },
     setUser(userId) {
-      state.$user_id = userId || undefined
+      state.distinct_id = userId || undefined
       if (userId)
         enqueue('setUser', {
           event: '$identify',
@@ -55,12 +55,12 @@ export function create<AppEvents extends object>({
         })
     },
     setUserProps(props) {
-      if (!state.$user_id) {
+      if (!state.distinct_id) {
         throw Error('No user exists')
       }
       return enqueue('setUserProps', {
         $token: token,
-        $distinct_id: state.$user_id,
+        $distinct_id: state.distinct_id,
         $set: props,
       })
     },
@@ -144,6 +144,8 @@ interface UserProps extends AnyProps {
   $phone?: string
   /** Reserved for internal use by Mixpanel */
   bucket?: never
+  /** Reserved for internal use by Mixpanel */
+  distinct_id?: never
 }
 
 const pathsByMethod: Record<string, string> = {
