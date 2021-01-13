@@ -16,17 +16,22 @@ export interface Client<AppEvents extends object = any> {
 export function create<AppEvents extends object>({
   token,
   debug,
-  queueSend = send => send().catch(console.error),
+  queueSend = (send, method, body) =>
+    send().catch(err => console.error(err, { [method]: body })),
 }: {
   token: string
   debug?: boolean
-  queueSend?: (send: () => Promise<void>) => Promise<void>
+  queueSend?: (
+    send: () => Promise<void>,
+    method: string,
+    body: AnyProps
+  ) => Promise<void>
 }): Client<AppEvents> {
   const state: ReservedState = {}
 
   return {
     track(event: string, props?: AnyProps) {
-      post('track#live-event', {
+      enqueue('track', {
         event,
         properties: {
           ...state,
@@ -41,7 +46,7 @@ export function create<AppEvents extends object>({
     setUser(userId) {
       state.$user_id = userId
       if (userId)
-        post('track#create-identity', {
+        enqueue('setUser', {
           event: '$identify',
           properties: {
             $identified_id: userId,
@@ -54,7 +59,7 @@ export function create<AppEvents extends object>({
       if (!state.$user_id) {
         throw Error('No user exists')
       }
-      return post('engage#profile-set', {
+      return enqueue('setUserProps', {
         $token: token,
         $distinct_id: state.$user_id,
         $set: props,
@@ -62,16 +67,16 @@ export function create<AppEvents extends object>({
     },
   }
 
-  // Send a POST request.
-  function post(path: string, data: AnyProps) {
+  // Queue a request.
+  function enqueue(method: string, body: AnyProps) {
     const trace = Error()
-    return queueSend(() => send(path, { data }, trace))
+    return queueSend(() => send(method, body, trace), method, body)
   }
 
   // Send a request.
-  function send(path: string, body: AnyProps, trace: Error) {
+  function send(method: string, body: AnyProps, trace: Error) {
     return new Promise<void>((resolve, reject) => {
-      const url = `https://api.mixpanel.com/${path}`
+      const url = 'https://api.mixpanel.com/' + pathsByMethod[method]
       const xhr = new XMLHttpRequest()
       xhr.open('POST', url)
       xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
@@ -116,6 +121,12 @@ interface ReservedState extends AnyProps {
   $model?: string
   /** Device UUID generated and persisted by you */
   $device_id?: string
+}
+
+const pathsByMethod: Record<string, string> = {
+  track: 'track#live-event',
+  setUser: 'track#create-identity',
+  setUserProps: 'engage#profile-set',
 }
 
 function encodeBody(body: AnyProps) {
