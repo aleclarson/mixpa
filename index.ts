@@ -134,24 +134,15 @@ function encodeBody(body: AnyProps) {
   let result = ''
 
   for (const key in body) {
-    let value = body[key]
-    if (value == null) {
-      continue
-    }
-
-    const type = typeof value
-    value =
-      type == 'object'
-        ? JSON.stringify(value)
-        : type == 'string'
-        ? encodeURIComponent(value)
-        : type == 'number'
-        ? value
-        : ''
-
-    if (value !== '') {
-      result += (result ? '&' : '') + encodeURIComponent(key) + '=' + value
-    }
+    const value = body[key]
+    if (value != null)
+      result +=
+        (result ? '&' : '') +
+        encodeURIComponent(key) +
+        '=' +
+        encodeURIComponent(
+          typeof value == 'object' ? JSON.stringify(value) : value
+        )
   }
 
   return result
