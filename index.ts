@@ -10,7 +10,7 @@ export interface Client<AppEvents extends object = any> {
   /** Identify the current user */
   setUser(userId: string | null): void
   /** Set properties for the current user */
-  setUserProps(props: AnyProps): void
+  setUserProps(props: AnyProps): Promise<void>
 }
 
 export function create<AppEvents extends object>({
@@ -54,7 +54,7 @@ export function create<AppEvents extends object>({
       if (!state.$user_id) {
         throw Error('No user exists')
       }
-      post('engage#profile-set', {
+      return post('engage#profile-set', {
         $token: token,
         $distinct_id: state.$user_id,
         $set: props,
