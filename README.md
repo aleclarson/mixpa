@@ -15,13 +15,6 @@ import { create } from 'mixpa'
 export const mp = create({
   token: '2418e6a0238911541536b590a76e2b01',
   debug: false,
-  shouldSend() {
-    // Return false to prevent sending.
-    // Return a promise to postpone sending.
-
-    // Must resolve with true to allow sending.
-    return true
-  },
 })
 ```
 
@@ -33,8 +26,10 @@ export const mp = create({
 - `debug?: boolean`  
   Enable verbose responses to debug invalid requests.
 
-- `shouldSend?: Function`  
-  Control when requests are sent. Useful when the network is down.
+- `queueSend?: (send: () => Promise<void>) => Promise<void>`  
+  Control when requests are sent. Useful for queueing and retrying.  
+  By default, all requests are sent immediately and `console.error`
+  is called when a request fails.
 
 ### Event Types
 
