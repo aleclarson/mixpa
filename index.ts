@@ -16,15 +16,15 @@ export interface Client<AppEvents extends object = any> {
 export function create<AppEvents extends object>({
   token,
   debug,
-  queueSend = (send, method, body) =>
-    send().catch(err => console.error(err, { [method]: body })),
+  queueSend = (send, method, data) =>
+    send().catch(err => console.error(err, { [method]: data })),
 }: {
   token: string
   debug?: boolean
   queueSend?: (
     send: () => Promise<void>,
     method: string,
-    body: AnyProps
+    data: AnyProps
   ) => Promise<void>
 }): Client<AppEvents> {
   const state: ReservedState = {}
@@ -68,22 +68,18 @@ export function create<AppEvents extends object>({
   }
 
   // Queue a request.
-  function enqueue(method: string, body: AnyProps) {
+  function enqueue(method: string, data: AnyProps) {
     const trace = Error()
-    return queueSend(() => send(method, body, trace), method, body)
+    return queueSend(() => send(method, data, trace), method, data)
   }
 
   // Send a request.
-  function send(method: string, body: AnyProps, trace: Error) {
+  function send(method: string, data: AnyProps, trace: Error) {
     return new Promise<void>((resolve, reject) => {
       const url = 'https://api.mixpanel.com/' + pathsByMethod[method]
       const xhr = new XMLHttpRequest()
       xhr.open('POST', url)
       xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
-      if (debug) {
-        xhr.responseType = 'json'
-        body.verbose = 1
-      }
       xhr.onload = () => {
         if (debug) {
           const { error } = xhr.response
@@ -97,6 +93,11 @@ export function create<AppEvents extends object>({
       xhr.onerror = () => {
         trace.message = 'Network request failed: ' + url
         reject(trace)
+      }
+      const body: AnyProps = { data }
+      if (debug) {
+        xhr.responseType = 'json'
+        body.verbose = 1
       }
       xhr.send(encodeBody(body))
     })
