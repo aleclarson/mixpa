@@ -1,10 +1,12 @@
 devDependencies:
+  '@lukeed/uuid': 2.0.0
   esbuild: 0.8.31
   prettier: 2.2.1
   rollup: 2.36.1
   rollup-plugin-dts: 2.0.1_rollup@2.36.1+typescript@4.1.3
   rollup-plugin-esbuild: 2.6.1_esbuild@0.8.31+rollup@2.36.1
   typescript: 4.1.3
+  xhr2: 0.2.0
 lockfileVersion: 5.2
 packages:
   /@babel/code-frame/7.12.11:
@@ -28,6 +30,20 @@ packages:
     optional: true
     resolution:
       integrity: sha512-i6rgnR/YgPEQzZZnbTHHuZdlE8qyoBNalD6F+q4vAFlcMEcqmkoG+mPqJYJCo63qPf74+Y1UZsl3l6f7/RIkmA==
+  /@lukeed/csprng/1.0.0:
+    dev: true
+    engines:
+      node: '>=8'
+    resolution:
+      integrity: sha512-ruuGHsnabmObBdeMg3vKdGRmh06Oog3eFpf/Tk6X0kDSJDpJTDCj2dqdp1+0VjzIUgHlFF9GBm7uFqfYhhdX9g==
+  /@lukeed/uuid/2.0.0:
+    dependencies:
+      '@lukeed/csprng': 1.0.0
+    dev: true
+    engines:
+      node: '>=8'
+    resolution:
+      integrity: sha512-dUz8OmYvlY5A9wXaroHIMSPASpSYRLCqbPvxGSyHguhtTQIy24lC+EGxQlwv71AhRCO55WOtgwhzQLpw27JaJQ==
   /@rollup/pluginutils/4.1.0_rollup@2.36.1:
     dependencies:
       estree-walker: 2.0.2
@@ -198,10 +214,18 @@ packages:
     hasBin: true
     resolution:
       integrity: sha512-B3ZIOf1IKeH2ixgHhj6la6xdwR9QrLC5d1VKeCSY4tvkqhF2eqd9O7txNlS0PO3GrBAFIdr3L1ndNwteUbZLYg==
+  /xhr2/0.2.0:
+    dev: true
+    engines:
+      node: '>= 6'
+    resolution:
+      integrity: sha512-BDtiD0i2iKPK/S8OAZfpk6tyzEDnKKSjxWHcMBVmh+LuqJ8A32qXTyOx+TVOg2dKvq6zGBq2sgKPkEeRs1qTRA==
 specifiers:
+  '@lukeed/uuid': ^2.0.0
   esbuild: ^0.8.31
   prettier: ^2.0.0
   rollup: ^2.36.1
   rollup-plugin-dts: ^2.0.1
   rollup-plugin-esbuild: ^2.6.1
   typescript: ^4.0.0
+  xhr2: ^0.2.0
