@@ -122,6 +122,8 @@ interface SuperProps extends AnyProps {
   $model?: string
   /** Device UUID generated and persisted by you */
   $device_id?: string
+  /** The full URL of the webpage on which the event is triggered. */
+  $current_url?: string
 }
 
 /** https://help.mixpanel.com/hc/en-us/articles/115004708186-Profile-Properties */
