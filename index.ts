@@ -6,7 +6,7 @@ export interface Client<AppEvents extends object = any> {
   ): void
   track<E extends PickByType<AppEvents, void>>(event: E): void
   /** Set properties to send with every track request */
-  setState(state: ReservedState): void
+  setState(state: SuperProps): void
   /** Identify the current user */
   setUser(userId: string | null): void
   /** Set properties for the current user */
@@ -27,7 +27,7 @@ export function create<AppEvents extends object>({
     data: AnyProps
   ) => Promise<void>
 }): Client<AppEvents> {
-  const state: ReservedState = {}
+  const state: SuperProps = {}
 
   return {
     track(event: string, props?: AnyProps) {
@@ -113,7 +113,7 @@ type AnyProps = { [key: string]: any }
 
 type ReservedEvent = '$session_start' | '$session_end'
 
-interface ReservedState extends AnyProps {
+interface SuperProps extends AnyProps {
   /** Application version */
   $app_version_string?: string
   /** Operating system version */
