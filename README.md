@@ -31,6 +31,8 @@ export const mp = create({
   By default, all requests are sent immediately and `console.error`
   is called when a request fails.
 
+&nbsp;
+
 ### Event Types
 
 Tracked events can be strongly typed.
@@ -46,6 +48,8 @@ export const mp = create<Events>({ ... })
 mp.track('sharePost') // Error: "sharePost" is not assignable to "openApp"
 ```
 
+&nbsp;
+
 ### Notes
 
 - No properties are ever set automatically.
@@ -53,6 +57,8 @@ mp.track('sharePost') // Error: "sharePost" is not assignable to "openApp"
 - You must've called `setUser` with a string before you can call `setUserProps`.
 
 &nbsp;
+
+### API
 
 To track an event:
 
