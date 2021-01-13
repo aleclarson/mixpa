@@ -1,5 +1,4 @@
 export interface Client<AppEvents extends object = any> {
-  track(event: ReservedEvent, props?: AnyProps): void
   track<E extends PickByType<AppEvents, object>>(
     event: E,
     props: AppEvents[E]
@@ -110,8 +109,6 @@ type PickByType<T, U> = Extract<
 >
 
 type AnyProps = { [key: string]: any }
-
-type ReservedEvent = '$session_start' | '$session_end'
 
 interface SuperProps extends AnyProps {
   /** Application version */
