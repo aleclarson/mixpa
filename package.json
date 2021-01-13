@@ -24,11 +24,13 @@
   "license": "MIT",
   "repository": "aleclarson/mixpa",
   "devDependencies": {
+    "@lukeed/uuid": "^2.0.0",
     "esbuild": "^0.8.31",
     "prettier": "^2.0.0",
     "rollup": "^2.36.1",
     "rollup-plugin-dts": "^2.0.1",
     "rollup-plugin-esbuild": "^2.6.1",
-    "typescript": "^4.0.0"
+    "typescript": "^4.0.0",
+    "xhr2": "^0.2.0"
   }
 }
