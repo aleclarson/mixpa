@@ -41,10 +41,13 @@ export function create<AppEvents extends object>({
     },
     setState(newState) {
       Object.assign(state, newState)
+      state.distinct_id = state.$user_id || state.$device_id
     },
     setUser(userId) {
-      state.distinct_id = userId || undefined
-      if (userId)
+      this.setState({
+        $user_id: userId || undefined,
+      })
+      if (userId && state.$device_id)
         enqueue('setUser', {
           event: '$identify',
           properties: {
@@ -55,12 +58,12 @@ export function create<AppEvents extends object>({
         })
     },
     setUserProps(props) {
-      if (!state.distinct_id) {
+      if (!state.$user_id) {
         throw Error('No user exists')
       }
       return enqueue('setUserProps', {
         $token: token,
-        $distinct_id: state.distinct_id,
+        $distinct_id: state.$user_id,
         $set: props,
       })
     },
