@@ -44,7 +44,7 @@ export function create<AppEvents extends object>({
       Object.assign(state, newState)
     },
     setUser(userId) {
-      state.$user_id = userId
+      state.$user_id = userId || undefined
       if (userId)
         enqueue('setUser', {
           event: '$identify',
