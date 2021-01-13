@@ -26,7 +26,7 @@ export const mp = create({
 - `debug?: boolean`  
   Enable verbose responses to debug invalid requests.
 
-- `queueSend?: (send: () => Promise<void>) => Promise<void>`  
+- `queueSend?: (send: () => Promise<void>, method: string, data: object) => Promise<void>`  
   Control when requests are sent. Useful for queueing and retrying.  
   By default, all requests are sent immediately and `console.error`
   is called when a request fails.
