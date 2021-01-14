@@ -14,7 +14,7 @@ export interface Client<AppEvents extends object = any> {
   setUserProps(userId: string, props: UserProps): Promise<void>
 }
 
-export function create<AppEvents extends object>({
+export function create<AppEvents extends object = any>({
   token,
   debug,
   queueSend = (send, method, data) =>
