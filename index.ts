@@ -10,6 +10,8 @@ export interface Client<AppEvents extends object = any> {
   setUser(userId: string | null): void
   /** Set properties for the current user */
   setUserProps(props: UserProps): Promise<void>
+  /** Set properties for another user */
+  setUserProps(userId: string, props: UserProps): Promise<void>
 }
 
 export function create<AppEvents extends object>({
@@ -57,13 +59,17 @@ export function create<AppEvents extends object>({
           },
         })
     },
-    setUserProps(props) {
-      if (!state.$user_id) {
+    setUserProps(userId: string | UserProps, props?: UserProps) {
+      if (!props) {
+        props = userId as any
+        userId = state.$user_id
+      }
+      if (!userId) {
         throw Error('No user exists')
       }
       return enqueue('setUserProps', {
         $token: token,
-        $distinct_id: state.$user_id,
+        $distinct_id: userId,
         $set: props,
       })
     },
