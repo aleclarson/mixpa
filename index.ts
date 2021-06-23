@@ -25,20 +25,31 @@ export interface Client<AppEvents extends object = any> {
   setUserProps(userId: string, props: UserProps): Promise<void>
 }
 
-export function create<AppEvents extends object = any>({
-  token,
-  debug,
-  queueSend = (send, method, data) =>
-    send().catch(err => console.error(err, { [method]: data })),
-}: {
+export interface Config {
   token: string
-  debug?: boolean
+  /**
+   * Debug your requests. Higher values inherit the effects of previous values.
+   *
+   * - 1: Log requests to the console.
+   * - 2: Enable verbose errors.
+   * - 3: Skip sending requests at all.
+   *
+   * @default 0
+   */
+  debug?: 0 | 1 | 2 | 3
   queueSend?: (
     send: () => Promise<void>,
     method: string,
     data: AnyProps
   ) => Promise<void>
-}): Client<AppEvents> {
+}
+
+export function create<AppEvents extends object = any>({
+  token,
+  debug = 0,
+  queueSend = (send, method, data) =>
+    send().catch(err => console.error(err, { [method]: data })),
+}: Config): Client<AppEvents> {
   const state: SuperProps = {}
 
   return {
@@ -53,6 +64,9 @@ export function create<AppEvents extends object = any>({
       })
     },
     setState(newState) {
+      if (debug > 0) {
+        console.debug(`[mixpa] setState %O`, newState)
+      }
       Object.assign(state, newState)
       state.distinct_id = state.$user_id || state.$device_id
     },
@@ -94,10 +108,16 @@ export function create<AppEvents extends object = any>({
 
   // Send a request.
   function send(method: string, data: AnyProps, trace: Error) {
+    if (debug > 0) {
+      console.debug(`[mixpa] %O %O`, method, data)
+    }
     return new Promise<void>((resolve, reject) => {
+      if (debug > 2) {
+        return resolve()
+      }
       const url = 'https://api.mixpanel.com/' + pathsByMethod[method]
       const body: AnyProps = { data }
-      if (debug) {
+      if (debug > 1) {
         body.verbose = 1
       }
       const payload = encodeBody(body)
@@ -118,11 +138,11 @@ export function create<AppEvents extends object = any>({
           'Content-Type',
           'application/x-www-form-urlencoded'
         )
-        if (debug) {
+        if (debug > 1) {
           xhr.responseType = 'json'
         }
         xhr.onload = () => {
-          if (debug) {
+          if (debug > 1) {
             const { error } = xhr.response
             if (error) {
               trace.message = error

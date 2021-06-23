@@ -14,6 +14,7 @@ declare const XMLHttpRequest: {
 }
 
 declare const console: {
+  debug(...args: any[]): void
   error(...args: any[]): void
 }
 
