@@ -23,8 +23,15 @@ export const mp = create({
 - `token: string`  
   Your project token.
 
-- `debug?: boolean`  
-  Enable verbose responses to debug invalid requests.
+- `baseUrl?: string`  
+  The domain to send requests to.
+
+- `debug?: 0 | 1 | 2 | 3`  
+  Debug your requests. Higher values inherit the effects of lower values.
+
+  - 1: Log requests to the console.
+  - 2: Enable verbose error messages.
+  - 3: Skip sending requests entirely.
 
 - `queueSend?: (send: () => Promise<void>, method: string, data: object) => Promise<void>`  
   Control when requests are sent. Useful for queueing and retrying.  
