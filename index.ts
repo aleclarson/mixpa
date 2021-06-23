@@ -1,5 +1,12 @@
-declare const navigator: {
-  sendBeacon(url: string, data: string): void
+// The navigator.sendBeacon API is only used when the document is hidden,
+// since it never lets us handle the response, which is useful for debugging
+// and error tracking.
+let useBeacon = false
+if (typeof navigator !== 'undefined' && typeof document !== 'undefined') {
+  useBeacon = document.visibilityState == 'hidden'
+  document.addEventListener('visibilitychange', () => {
+    useBeacon = document.visibilityState == 'hidden'
+  })
 }
 
 export interface Client<AppEvents extends object = any> {
@@ -94,8 +101,16 @@ export function create<AppEvents extends object = any>({
         body.verbose = 1
       }
       const payload = encodeBody(body)
-      if (typeof navigator !== 'undefined') {
-        navigator.sendBeacon(url, payload)
+      const onError = () => {
+        trace.message = 'Network request failed: ' + url
+        reject(trace)
+      }
+      if (useBeacon) {
+        if (navigator.sendBeacon(url, payload)) {
+          resolve()
+        } else {
+          onError()
+        }
       } else {
         const xhr = new XMLHttpRequest()
         xhr.open('POST', url)
@@ -116,10 +131,7 @@ export function create<AppEvents extends object = any>({
           }
           resolve()
         }
-        xhr.onerror = () => {
-          trace.message = 'Network request failed: ' + url
-          reject(trace)
-        }
+        xhr.onerror = onError
         xhr.send(payload)
       }
     })
