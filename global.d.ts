@@ -19,10 +19,14 @@ declare const console: {
 }
 
 declare const navigator: {
-  sendBeacon(url: string, data: string): boolean
+  sendBeacon(url: string, data: string | URLSearchParams): boolean
 }
 
 declare const document: {
   visibilityState: 'visible' | 'hidden'
   addEventListener(event: 'visibilitychange', cb: () => void): void
+}
+
+declare class URLSearchParams {
+  constructor(init?: string)
 }

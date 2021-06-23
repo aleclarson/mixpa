@@ -121,17 +121,17 @@ export function create<AppEvents extends object = any>({
         return resolve()
       }
       const url = baseUrl + pathsByMethod[method]
+      const onError = () => {
+        trace.message = 'Network request failed: ' + url
+        reject(trace)
+      }
       const body: AnyProps = { data }
       if (debug > 1) {
         body.verbose = 1
       }
       const payload = encodeBody(body)
-      const onError = () => {
-        trace.message = 'Network request failed: ' + url
-        reject(trace)
-      }
       if (useBeacon) {
-        if (navigator.sendBeacon(url, payload)) {
+        if (navigator.sendBeacon(url, new URLSearchParams(payload))) {
           resolve()
         } else {
           onError()
