@@ -37,6 +37,10 @@ export interface Config {
    * @default 0
    */
   debug?: 0 | 1 | 2 | 3
+  /**
+   * @default https://api.mixpanel.com/
+   */
+  baseUrl?: string
   queueSend?: (
     send: () => Promise<void>,
     method: string,
@@ -47,6 +51,7 @@ export interface Config {
 export function create<AppEvents extends object = any>({
   token,
   debug = 0,
+  baseUrl = 'https://api.mixpanel.com/',
   queueSend = (send, method, data) =>
     send().catch(err => console.error(err, { [method]: data })),
 }: Config): Client<AppEvents> {
@@ -115,7 +120,7 @@ export function create<AppEvents extends object = any>({
       if (debug > 2) {
         return resolve()
       }
-      const url = 'https://api.mixpanel.com/' + pathsByMethod[method]
+      const url = baseUrl + pathsByMethod[method]
       const body: AnyProps = { data }
       if (debug > 1) {
         body.verbose = 1
