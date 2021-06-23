@@ -1,3 +1,7 @@
+declare const navigator: {
+  sendBeacon(url: string, data: string): void
+}
+
 export interface Client<AppEvents extends object = any> {
   track<E extends PickByType<AppEvents, object>>(
     event: E,
@@ -85,29 +89,39 @@ export function create<AppEvents extends object = any>({
   function send(method: string, data: AnyProps, trace: Error) {
     return new Promise<void>((resolve, reject) => {
       const url = 'https://api.mixpanel.com/' + pathsByMethod[method]
-      const xhr = new XMLHttpRequest()
-      xhr.open('POST', url)
-      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
-      xhr.onload = () => {
-        if (debug) {
-          const { error } = xhr.response
-          if (error) {
-            trace.message = error
-            reject(trace)
-          }
-        }
-        resolve()
-      }
-      xhr.onerror = () => {
-        trace.message = 'Network request failed: ' + url
-        reject(trace)
-      }
       const body: AnyProps = { data }
       if (debug) {
-        xhr.responseType = 'json'
         body.verbose = 1
       }
-      xhr.send(encodeBody(body))
+      const payload = encodeBody(body)
+      if (typeof navigator !== 'undefined') {
+        navigator.sendBeacon(url, payload)
+      } else {
+        const xhr = new XMLHttpRequest()
+        xhr.open('POST', url)
+        xhr.setRequestHeader(
+          'Content-Type',
+          'application/x-www-form-urlencoded'
+        )
+        if (debug) {
+          xhr.responseType = 'json'
+        }
+        xhr.onload = () => {
+          if (debug) {
+            const { error } = xhr.response
+            if (error) {
+              trace.message = error
+              reject(trace)
+            }
+          }
+          resolve()
+        }
+        xhr.onerror = () => {
+          trace.message = 'Network request failed: ' + url
+          reject(trace)
+        }
+        xhr.send(payload)
+      }
     })
   }
 }
