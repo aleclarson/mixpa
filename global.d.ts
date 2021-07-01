@@ -13,6 +13,17 @@ declare const XMLHttpRequest: {
   new (): XMLHttpRequest
 }
 
+declare interface Response {
+  ok: boolean
+  status: number
+  json(): Promise<any>
+}
+
+declare function fetch(
+  url: string,
+  init?: { method?: string; body?: any; headers?: any }
+): Promise<Response>
+
 declare const console: {
   debug(...args: any[]): void
   error(...args: any[]): void

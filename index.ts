@@ -25,6 +25,10 @@ export interface Client<AppEvents extends object = any> {
   setUserProps(userId: string, props: UserProps): Promise<void>
 }
 
+export interface MixpaError extends Error {
+  status?: number
+}
+
 export interface Config {
   token: string
   /**
@@ -112,7 +116,7 @@ export function create<AppEvents extends object = any>({
   }
 
   // Send a request.
-  function send(method: string, data: AnyProps, trace: Error) {
+  function send(method: string, data: AnyProps, trace: MixpaError) {
     if (debug > 0) {
       console.debug(`[mixpa] %O %O`, method, data)
     }
@@ -121,8 +125,9 @@ export function create<AppEvents extends object = any>({
         return resolve()
       }
       const url = baseUrl + pathsByMethod[method]
-      const onError = () => {
-        trace.message = 'Network request failed: ' + url
+      const onError = (status?: number) => {
+        trace.message = 'Mixpa request failed: ' + url
+        if (status) trace.status = status
         reject(trace)
       }
       const body: AnyProps = { data }
@@ -136,6 +141,27 @@ export function create<AppEvents extends object = any>({
         } else {
           onError()
         }
+      } else if (typeof fetch !== 'undefined') {
+        fetch(url, {
+          method: 'POST',
+          body: payload,
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }).then(async response => {
+          if (debug > 1) {
+            const { error } = await response.json()
+            if (error) {
+              trace.message = error
+              return reject(trace)
+            }
+          }
+          if (response.ok) {
+            resolve()
+          } else {
+            onError(response.status)
+          }
+        })
       } else {
         const xhr = new XMLHttpRequest()
         xhr.open('POST', url)
