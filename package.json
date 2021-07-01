@@ -1,6 +1,6 @@
 {
   "name": "mixpa",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Mixpanel client for app events",
   "main": "dist/mixpa.js",
   "module": "dist/mixpa.mjs",
