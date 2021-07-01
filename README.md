@@ -33,10 +33,12 @@ export const mp = create({
   - 2: Enable verbose error messages.
   - 3: Skip sending requests entirely.
 
-- `queueSend?: (send: () => Promise<void>, method: string, data: object) => Promise<void>`  
-  Control when requests are sent. Useful for queueing and retrying.  
-  By default, all requests are sent immediately and `console.error`
-  is called when a request fails.
+- `onError?: (error: Error, req: MixpaRequest) => void`  
+   Control what happens when a request fails. You can rethrow the error to force the original caller to handle it, but rethrown errors for non-critical requests are just logged to the console.
+
+- `queueSend?: (send: () => void, method: string, data: object) => void`  
+  Control when each request is sent. For example, you might wait for a network connection.  
+  By default, requests are sent immediately.
 
 &nbsp;
 
