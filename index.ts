@@ -56,7 +56,11 @@ export interface Config {
    * block Mixpanel, so acting like requests did not fail in that case
    * allows for a smoother UX.
    */
-  onError?: (error: MixpaError, method: string, data: AnyProps) => void
+  onError?: (
+    error: MixpaError,
+    method: string,
+    data: AnyProps
+  ) => Promise<void> | void
   /**
    * Control when each request is sent.
    *
@@ -140,13 +144,13 @@ export function create<AppEvents extends object = any>({
             return resolve()
           }
           const url = baseUrl + pathsByMethod[method]
-          send(url, data, resolve, (status, message) => {
+          send(url, data, resolve, async (status, message) => {
             trace.message =
               'Mixpa request failed: ' + url + (message ? '\n' + message : '')
             trace.status = status
             trace.retry = () => enqueue(method, data)
             try {
-              onError(trace, method, data)
+              await onError(trace, method, data)
               resolve()
             } catch (error) {
               // Only the `setUserProps` method returns its promise.
