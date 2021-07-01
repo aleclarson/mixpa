@@ -151,8 +151,7 @@ export function create<AppEvents extends object = any>({
                   retry: () => enqueue(method, data),
                 })
               } else {
-                if (isCritical) throw trace
-                console.error(trace, { [method]: data })
+                throw trace
               }
             } catch (error) {
               // Only potentially critical requests return their promise, but
@@ -160,6 +159,8 @@ export function create<AppEvents extends object = any>({
               if (isCritical || error != trace) {
                 return reject(error)
               }
+              // Non-critical requests are just logged.
+              console.error(trace, { [method]: data })
             }
             resolve()
           })
