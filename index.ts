@@ -52,6 +52,8 @@ export interface Config {
   ) => Promise<void>
 }
 
+export const noRetryStatus = 418
+
 export function create<AppEvents extends object = any>({
   token,
   debug = 0,
@@ -125,8 +127,9 @@ export function create<AppEvents extends object = any>({
         return resolve()
       }
       const url = baseUrl + pathsByMethod[method]
-      const onError = (status?: number) => {
-        trace.message = 'Mixpa request failed: ' + url
+      const onError = (status?: number, message?: string) => {
+        trace.message =
+          'Mixpa request failed: ' + url + (message ? '\n' + message : '')
         if (status) trace.status = status
         reject(trace)
       }
@@ -148,20 +151,22 @@ export function create<AppEvents extends object = any>({
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
-        }).then(async response => {
-          if (debug > 1) {
-            const { error } = await response.json()
-            if (error) {
-              trace.message = error
-              return reject(trace)
-            }
-          }
-          if (response.ok) {
-            resolve()
-          } else {
-            onError(response.status)
-          }
         })
+          .then(async response => {
+            if (debug > 1) {
+              const { error } = await response.json()
+              if (error) {
+                return onError(noRetryStatus, error)
+              }
+            }
+            if (response.ok) {
+              resolve()
+            } else {
+              onError(response.status)
+            }
+          })
+          // Probably lost connection, invalid URL, or CORS error.
+          .catch(() => onError(noRetryStatus))
       } else {
         const xhr = new XMLHttpRequest()
         xhr.open('POST', url)
@@ -176,13 +181,13 @@ export function create<AppEvents extends object = any>({
           if (debug > 1) {
             const { error } = xhr.response
             if (error) {
-              trace.message = error
-              reject(trace)
+              return onError(noRetryStatus, error)
             }
           }
           resolve()
         }
-        xhr.onerror = onError
+        // Probably lost connection, invalid URL, or CORS error.
+        xhr.onerror = () => onError(noRetryStatus)
         xhr.send(payload)
       }
     })
