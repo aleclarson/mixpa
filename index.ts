@@ -27,6 +27,7 @@ export interface Client<AppEvents extends object = any> {
 
 export interface MixpaError extends Error {
   status?: number
+  retry: () => void
 }
 
 export interface Config {
@@ -125,7 +126,7 @@ export function create<AppEvents extends object = any>({
 
   // Queue a request.
   function enqueue(method: string, data: AnyProps) {
-    const trace: MixpaError = Error()
+    const trace = Error() as MixpaError
     return new Promise<void>((resolve, reject) =>
       queueSend(
         () => {
@@ -139,7 +140,8 @@ export function create<AppEvents extends object = any>({
           send(url, data, resolve, (status, message) => {
             trace.message =
               'Mixpa request failed: ' + url + (message ? '\n' + message : '')
-            if (status) trace.status = status
+            trace.status = status
+            trace.retry = () => enqueue(method, data)
             try {
               onError(trace, method, data)
               resolve()
