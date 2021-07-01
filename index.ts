@@ -28,6 +28,7 @@ export interface Client<AppEvents extends object = any> {
 export type MixpaMethod = 'track' | 'setUser' | 'setUserProps'
 
 export interface MixpaRequest {
+  isRetry: boolean
   status?: number
   method: MixpaMethod
   data: AnyProps
@@ -126,7 +127,8 @@ export function create<AppEvents extends object = any>({
   }
 
   // Queue a request.
-  function enqueue(method: MixpaMethod, data: AnyProps, trace = Error()) {
+  function enqueue(method: MixpaMethod, data: AnyProps, reusedTrace?: Error) {
+    const trace = reusedTrace || Error()
     return new Promise<void>((resolve, reject) =>
       queueSend(
         () => {
@@ -144,6 +146,7 @@ export function create<AppEvents extends object = any>({
             try {
               if (onError) {
                 await onError(trace, {
+                  isRetry: !!reusedTrace,
                   status,
                   method,
                   data,
