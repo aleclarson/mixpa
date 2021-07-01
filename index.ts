@@ -45,11 +45,23 @@ export interface Config {
    * @default https://api.mixpanel.com/
    */
   baseUrl?: string
-  queueSend?: (
-    send: () => Promise<void>,
-    method: string,
-    data: AnyProps
-  ) => Promise<void>
+  /**
+   * Control what happens when a request fails. You can rethrow the
+   * error to force the original caller to handle it, but you should
+   * avoid doing that when `method` equals `"setUser"
+   *
+   * When undefined, errors are logged and swallowed, which means the
+   * original caller has its promise resolved without error. Some browsers
+   * block Mixpanel, so acting like requests did not fail in that case
+   * allows for a smoother UX.
+   */
+  onError?: (error: MixpaError, method: string, data: AnyProps) => void
+  /**
+   * Control when each request is sent.
+   *
+   * For example, you might wait for a network connection.
+   */
+  queueSend?: (send: () => void, method: string, data: AnyProps) => void
 }
 
 export const noRetryStatus = 418
@@ -58,8 +70,8 @@ export function create<AppEvents extends object = any>({
   token,
   debug = 0,
   baseUrl = 'https://api.mixpanel.com/',
-  queueSend = (send, method, data) =>
-    send().catch(err => console.error(err, { [method]: data })),
+  onError = (error, method, data) => console.error(error, { [method]: data }),
+  queueSend = send => send(),
 }: Config): Client<AppEvents> {
   const state: SuperProps = {}
 
@@ -113,84 +125,96 @@ export function create<AppEvents extends object = any>({
 
   // Queue a request.
   function enqueue(method: string, data: AnyProps) {
-    const trace = Error()
-    return queueSend(() => send(method, data, trace), method, data)
+    const trace: MixpaError = Error()
+    return new Promise<void>((resolve, reject) =>
+      queueSend(
+        () => {
+          if (debug > 0) {
+            console.debug(`[mixpa] %O %O`, method, data)
+          }
+          if (debug > 2) {
+            return resolve()
+          }
+          const url = baseUrl + pathsByMethod[method]
+          send(url, data, resolve, (status, message) => {
+            trace.message =
+              'Mixpa request failed: ' + url + (message ? '\n' + message : '')
+            if (status) trace.status = status
+            try {
+              onError(trace, method, data)
+              resolve()
+            } catch (error) {
+              reject(error)
+            }
+          })
+        },
+        method,
+        data
+      )
+    )
   }
 
   // Send a request.
-  function send(method: string, data: AnyProps, trace: MixpaError) {
-    if (debug > 0) {
-      console.debug(`[mixpa] %O %O`, method, data)
+  function send(
+    url: string,
+    data: AnyProps,
+    resolve: (value?: Promise<void>) => void,
+    onError: (status?: number, message?: string) => void
+  ) {
+    const body: AnyProps = { data }
+    if (debug > 1) {
+      body.verbose = 1
     }
-    return new Promise<void>((resolve, reject) => {
-      if (debug > 2) {
-        return resolve()
-      }
-      const url = baseUrl + pathsByMethod[method]
-      const onError = (status?: number, message?: string) => {
-        trace.message =
-          'Mixpa request failed: ' + url + (message ? '\n' + message : '')
-        if (status) trace.status = status
-        reject(trace)
-      }
-      const body: AnyProps = { data }
-      if (debug > 1) {
-        body.verbose = 1
-      }
-      const payload = encodeBody(body)
-      if (useBeacon) {
-        if (navigator.sendBeacon(url, new URLSearchParams(payload))) {
-          resolve()
-        } else {
-          onError()
-        }
-      } else if (typeof fetch !== 'undefined') {
-        fetch(url, {
-          method: 'POST',
-          body: payload,
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        })
-          .then(async response => {
-            if (debug > 1) {
-              const { error } = await response.json()
-              if (error) {
-                return onError(noRetryStatus, error)
-              }
-            }
-            if (response.ok) {
-              resolve()
-            } else {
-              onError(response.status)
-            }
-          })
-          // Probably lost connection, invalid URL, or CORS error.
-          .catch(() => onError(noRetryStatus))
+    const payload = encodeBody(body)
+    if (useBeacon) {
+      if (navigator.sendBeacon(url, new URLSearchParams(payload))) {
+        resolve()
       } else {
-        const xhr = new XMLHttpRequest()
-        xhr.open('POST', url)
-        xhr.setRequestHeader(
-          'Content-Type',
-          'application/x-www-form-urlencoded'
-        )
-        if (debug > 1) {
-          xhr.responseType = 'json'
-        }
-        xhr.onload = () => {
+        onError()
+      }
+    } else if (typeof fetch !== 'undefined') {
+      fetch(url, {
+        method: 'POST',
+        body: payload,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      })
+        .then(async response => {
           if (debug > 1) {
-            const { error } = xhr.response
+            const { error } = await response.json()
             if (error) {
               return onError(noRetryStatus, error)
             }
           }
-          resolve()
-        }
+          if (response.ok) {
+            resolve()
+          } else {
+            onError(response.status)
+          }
+        })
         // Probably lost connection, invalid URL, or CORS error.
-        xhr.onerror = () => onError(noRetryStatus)
-        xhr.send(payload)
+        .catch(() => onError(noRetryStatus))
+    } else {
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', url)
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+      if (debug > 1) {
+        xhr.responseType = 'json'
       }
-    })
+      xhr.onload = () => {
+        if (debug > 1) {
+          const { error } = xhr.response
+          if (error) {
+            return onError(noRetryStatus, error)
+          }
+        }
+        resolve()
+      }
+      // Probably lost connection, invalid URL, or CORS error.
+      xhr.onerror = () => onError(noRetryStatus)
+      xhr.send(payload)
+    }
   }
 }
 
