@@ -54,10 +54,8 @@ export interface Config {
    * Control what happens when a request fails. You can rethrow the
    * error to force the original caller to handle it.
    *
-   * When undefined, errors are logged and swallowed, which means the
-   * original caller has its promise resolved without error. Some browsers
-   * block Mixpanel, so acting like requests did not fail in that case
-   * allows for a smoother UX.
+   * By default, critical requests (eg: `setUserProps`) have their promise
+   * rejected, while other errors are logged to the console.
    */
   onError?: (error: Error, req: MixpaRequest) => Promise<void> | void
   /**
@@ -141,6 +139,7 @@ export function create<AppEvents extends object = any>({
           }
           const url = baseUrl + pathsByMethod[method]
           send(url, data, resolve, async (status, message) => {
+            const isCritical = method == 'setUserProps'
             trace.message =
               'Mixpa request failed: ' + url + (message ? '\n' + message : '')
             try {
@@ -152,12 +151,13 @@ export function create<AppEvents extends object = any>({
                   retry: () => enqueue(method, data),
                 })
               } else {
+                if (isCritical) throw trace
                 console.error(trace, { [method]: data })
               }
             } catch (error) {
               // Only potentially critical requests return their promise, but
               // if `onError` throws unexpectedly, we always want to reject it.
-              if (error !== trace || method == 'setUserProps') {
+              if (isCritical || error != trace) {
                 return reject(error)
               }
             }
