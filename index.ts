@@ -48,8 +48,7 @@ export interface Config {
   baseUrl?: string
   /**
    * Control what happens when a request fails. You can rethrow the
-   * error to force the original caller to handle it, but you should
-   * avoid doing that when `method` equals `"setUser"
+   * error to force the original caller to handle it.
    *
    * When undefined, errors are logged and swallowed, which means the
    * original caller has its promise resolved without error. Some browsers
