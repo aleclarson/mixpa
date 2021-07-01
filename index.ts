@@ -25,9 +25,13 @@ export interface Client<AppEvents extends object = any> {
   setUserProps(userId: string, props: UserProps): Promise<void>
 }
 
-export interface MixpaError extends Error {
+export type MixpaMethod = 'track' | 'setUser' | 'setUserProps'
+
+export interface MixpaRequest {
   status?: number
-  retry: () => void
+  method: MixpaMethod
+  data: AnyProps
+  retry(): void
 }
 
 export interface Config {
@@ -55,11 +59,7 @@ export interface Config {
    * block Mixpanel, so acting like requests did not fail in that case
    * allows for a smoother UX.
    */
-  onError?: (
-    error: MixpaError,
-    method: string,
-    data: AnyProps
-  ) => Promise<void> | void
+  onError?: (error: Error, req: MixpaRequest) => Promise<void> | void
   /**
    * Control when each request is sent.
    *
@@ -70,14 +70,11 @@ export interface Config {
 
 export const noRetryStatus = 418
 
-const logError = (error: MixpaError, method: string, data: AnyProps) =>
-  console.error(error, { [method]: data })
-
 export function create<AppEvents extends object = any>({
   token,
   debug = 0,
   baseUrl = 'https://api.mixpanel.com/',
-  onError = logError,
+  onError,
   queueSend = send => send(),
 }: Config): Client<AppEvents> {
   const state: SuperProps = {}
@@ -131,8 +128,8 @@ export function create<AppEvents extends object = any>({
   }
 
   // Queue a request.
-  function enqueue(method: string, data: AnyProps) {
-    const trace = Error() as MixpaError
+  function enqueue(method: MixpaMethod, data: AnyProps) {
+    const trace = Error()
     return new Promise<void>((resolve, reject) =>
       queueSend(
         () => {
@@ -146,20 +143,25 @@ export function create<AppEvents extends object = any>({
           send(url, data, resolve, async (status, message) => {
             trace.message =
               'Mixpa request failed: ' + url + (message ? '\n' + message : '')
-            trace.status = status
-            trace.retry = () => enqueue(method, data)
             try {
-              await onError(trace, method, data)
-              resolve()
-            } catch (error) {
-              // Only the `setUserProps` method returns its promise.
-              if (method == 'setUserProps') {
-                reject(error)
+              if (onError) {
+                await onError(trace, {
+                  status,
+                  method,
+                  data,
+                  retry: () => enqueue(method, data),
+                })
               } else {
-                // The rest are considered non-critical.
-                logError(error, method, data)
+                console.error(trace, { [method]: data })
+              }
+            } catch (error) {
+              // Only potentially critical requests return their promise, but
+              // if `onError` throws unexpectedly, we always want to reject it.
+              if (error !== trace || method == 'setUserProps') {
+                return reject(error)
               }
             }
+            resolve()
           })
         },
         method,
