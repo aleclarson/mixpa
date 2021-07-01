@@ -67,11 +67,14 @@ export interface Config {
 
 export const noRetryStatus = 418
 
+const logError = (error: MixpaError, method: string, data: AnyProps) =>
+  console.error(error, { [method]: data })
+
 export function create<AppEvents extends object = any>({
   token,
   debug = 0,
   baseUrl = 'https://api.mixpanel.com/',
-  onError = (error, method, data) => console.error(error, { [method]: data }),
+  onError = logError,
   queueSend = send => send(),
 }: Config): Client<AppEvents> {
   const state: SuperProps = {}
@@ -146,7 +149,13 @@ export function create<AppEvents extends object = any>({
               onError(trace, method, data)
               resolve()
             } catch (error) {
-              reject(error)
+              // Only the `setUserProps` method returns its promise.
+              if (method == 'setUserProps') {
+                reject(error)
+              } else {
+                // The rest are considered non-critical.
+                logError(error, method, data)
+              }
             }
           })
         },
