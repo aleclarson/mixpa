@@ -126,8 +126,7 @@ export function create<AppEvents extends object = any>({
   }
 
   // Queue a request.
-  function enqueue(method: MixpaMethod, data: AnyProps) {
-    const trace = Error()
+  function enqueue(method: MixpaMethod, data: AnyProps, trace = Error()) {
     return new Promise<void>((resolve, reject) =>
       queueSend(
         () => {
@@ -148,7 +147,7 @@ export function create<AppEvents extends object = any>({
                   status,
                   method,
                   data,
-                  retry: () => enqueue(method, data),
+                  retry: () => enqueue(method, data, trace),
                 })
               } else {
                 throw trace
