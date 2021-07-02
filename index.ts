@@ -156,9 +156,9 @@ export function create<AppEvents extends object = any>({
                 throw trace
               }
             } catch (error) {
-              // Only potentially critical requests return their promise, but
-              // if `onError` throws unexpectedly, we always want to reject it.
-              if (isCritical || error != trace) {
+              // Reject the promise for critical requests, retried requests,
+              // and unexpected errors.
+              if (isCritical || reusedTrace || error != trace) {
                 return reject(error)
               }
               // Non-critical requests are just logged.
