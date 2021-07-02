@@ -14,7 +14,6 @@ import { create } from 'mixpa'
 
 export const mp = create({
   token: '2418e6a0238911541536b590a76e2b01',
-  debug: false,
 })
 ```
 
