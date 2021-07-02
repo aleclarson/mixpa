@@ -32,7 +32,7 @@ export interface MixpaRequest {
   status?: number
   method: MixpaMethod
   data: AnyProps
-  retry(): void
+  retry(): Promise<void>
 }
 
 export interface Config {
