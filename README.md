@@ -59,6 +59,44 @@ mp.track('sharePost') // Error: "sharePost" is not assignable to "openApp"
 
 &nbsp;
 
+### Automatic Retries
+
+Using the `onError` option, you can implement logic for automatically retrying a failed request.
+
+Here's an example that uses `backo2` for exponential backoff:
+
+```ts
+import { MixpaRequest, noRetryStatus } from 'mixpa'
+import Backoff from 'backo2'
+
+function onError(error: Error, req: MixpaRequest) {
+  // If this error is from a retried request, rethrow it so the retry
+  // handler is notified. Otherwise, rethrow it only when it's obviously
+  // not a network disconnection.
+  if (req.isRetry || (req.status == noRetryStatus && navigator.onLine)) {
+    throw error
+  }
+  return new Promise<void>((resolve, reject) => {
+    const backoff = new Backoff()
+
+    function scheduleRetry() {
+      if (backoff.attempts == 10) {
+        // For critical requests, this will reject their promise.
+        // Otherwise, the error is just logged to console.
+        return reject(error)
+      }
+      setTimeout(() => {
+        req.retry().then(resolve, scheduleRetry)
+      }, backoff.duration())
+    }
+
+    scheduleRetry()
+  })
+}
+```
+
+&nbsp;
+
 ### Notes
 
 - No properties are ever set automatically.
